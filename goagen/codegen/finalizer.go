@@ -23,7 +23,7 @@ func NewFinalizer() *Finalizer {
 	)
 	fm := template.FuncMap{
 		"tabs":         Tabs,
-		"goify":        Goify,
+		"goifyAtt":     GoifyAtt,
 		"gotyperef":    GoTypeRef,
 		"add":          Add,
 		"finalizeCode": f.Code,
@@ -79,11 +79,11 @@ func (f *Finalizer) recurse(root, att *design.AttributeDefinition, target string
 				}
 				buf.WriteString(RunTemplate(f.assignmentT, data))
 			}
-			a := f.recurse(root, catt, fmt.Sprintf("%s.%s", target, Goify(n, true)), depth+1).String()
+			a := f.recurse(root, catt, fmt.Sprintf("%s.%s", target, GoifyAtt(catt, n, true)), depth+1).String()
 			if a != "" {
 				if catt.Type.IsObject() {
 					a = fmt.Sprintf("%sif %s.%s != nil {\n%s\n%s}",
-						Tabs(depth), target, Goify(n, true), a, Tabs(depth))
+						Tabs(depth), target, GoifyAtt(catt, n, true), a, Tabs(depth))
 				}
 				if !first {
 					buf.WriteByte('\n')
@@ -162,12 +162,12 @@ func PrintVal(t design.DataType, val interface{}) string {
 }
 
 const (
-	assignmentTmpl = `{{ if .catt.Type.IsPrimitive }}{{ $defaultName := (print "default" (goify .field true)) }}{{/*
+	assignmentTmpl = `{{ if .catt.Type.IsPrimitive }}{{ $defaultName := (print "default" (goifyAtt .catt .field true)) }}{{/*
 */}}{{ tabs .depth }}var {{ $defaultName }}{{if .isDatetime}}, _{{end}} = {{ .defaultVal }}
-{{ tabs .depth }}if {{ .target }}.{{ goify .field true }} == nil {
-{{ tabs .depth }}	{{ .target }}.{{ goify .field true }} = &{{ $defaultName }}
-}{{ else }}{{ tabs .depth }}if {{ .target }}.{{ goify .field true }} == nil {
-{{ tabs .depth }}	{{ .target }}.{{ goify .field true }} = {{ .defaultVal }}
+{{ tabs .depth }}if {{ .target }}.{{ goifyAtt .catt .field true }} == nil {
+{{ tabs .depth }}	{{ .target }}.{{ goifyAtt .catt .field true }} = &{{ $defaultName }}
+}{{ else }}{{ tabs .depth }}if {{ .target }}.{{ goifyAtt .catt .field true }} == nil {
+{{ tabs .depth }}	{{ .target }}.{{ goifyAtt .catt .field true }} = {{ .defaultVal }}
 }{{ end }}`
 
 	arrayAssignmentTmpl = `{{ $a := finalizeCode .elemType "e" (add .depth 1) }}{{/*
